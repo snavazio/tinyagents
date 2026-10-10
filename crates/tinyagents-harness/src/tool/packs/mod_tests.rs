@@ -393,3 +393,31 @@ fn catalog_lookups_honour_owners() {
     );
     assert_eq!(CATALOG.callable_pack_ids(&|n| n == "a_two"), ["alpha"]);
 }
+
+const DIRECT: PackCatalog = PackCatalog::new(PACKS, MARKER).with_direct_calls();
+
+/// A host that admits direct calls to packed tools steers both the `use_skill`
+/// description and the listing to the flat `tool { … }` call, never to the
+/// nested `use_skill { skill, tool, args }` form smaller models garble.
+#[tokio::test]
+async fn direct_call_catalog_steers_to_the_flat_call() {
+    assert!(!CATALOG.direct_calls() && DIRECT.direct_calls());
+
+    let handle = PackRegistryHandle::default();
+    let mut all: Vec<Box<dyn Tool>> = vec![Box::new(FakeTool::plain("a_one"))];
+    all.push(Box::new(UseSkillTool::new(handle.clone(), DIRECT)));
+    let all = Arc::new(all);
+    handle.bind(Arc::downgrade(&all));
+
+    let description = find(&all, USE_SKILL).description().to_string();
+    assert!(description.contains("then call the tool you need directly by its own name"));
+    assert!(!description.contains("`skill` + `tool` + `args`"));
+
+    let listing = render_pack_filtered(&DIRECT, "alpha", &handle, &|_| true, "").expect("listing");
+    assert!(listing.contains("directly by its own name"));
+    assert!(
+        !listing.contains("\"args\""),
+        "no nested form offered: {listing}"
+    );
+    assert!(listing.contains("## `a_one`"));
+}

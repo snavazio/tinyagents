@@ -39,10 +39,16 @@ pub struct UseSkillTool {
 
 impl UseSkillTool {
     pub fn new(handle: PackRegistryHandle, catalog: PackCatalog) -> Self {
+        let run_one = if catalog.direct_calls() {
+            "then call the tool you need directly by its own name"
+        } else {
+            "then \
+             again with `skill` + `tool` + `args` to run one"
+        };
         let description = format!(
             "Reach a skill's tools. Their names, descriptions and argument schemas are NOT in \
-             your context until you ask for them: call this with `skill` alone to see them, then \
-             again with `skill` + `tool` + `args` to run one.\n\nSkills:\n{}",
+             your context until you ask for them: call this with `skill` alone to see them, \
+             {run_one}.\n\nSkills:\n{}",
             catalog.pack_index_markdown()
         );
         Self {

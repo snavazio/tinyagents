@@ -54,11 +54,18 @@ pub fn render_pack_filtered(
         out.push_str(pack.guide.trim());
         out.push_str("\n\n");
     }
-    out.push_str(&format!(
-        "Call these with `use_skill {{ \"skill\": \"{}\", \"tool\": \"<name>\", \"args\": {{ … }} }}`. \
-         `args` is the tool's own argument object, exactly as documented below.\n\n",
-        pack.id
-    ));
+    if catalog.direct_calls() {
+        out.push_str(
+            "Call each of these directly by its own name, with its own arguments exactly as \
+             documented below. Do not wrap them in `use_skill`.\n\n",
+        );
+    } else {
+        out.push_str(&format!(
+            "Call these with `use_skill {{ \"skill\": \"{}\", \"tool\": \"<name>\", \"args\": {{ … }} }}`. \
+             `args` is the tool's own argument object, exactly as documented below.\n\n",
+            pack.id
+        ));
+    }
 
     let mut found = 0usize;
     for name in pack.tools {

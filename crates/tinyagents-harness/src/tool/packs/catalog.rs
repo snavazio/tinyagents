@@ -14,6 +14,7 @@ use super::types::ToolPack;
 pub struct PackCatalog {
     packs: &'static [ToolPack],
     not_found_marker: &'static str,
+    direct_calls: bool,
 }
 
 impl PackCatalog {
@@ -23,7 +24,27 @@ impl PackCatalog {
         Self {
             packs,
             not_found_marker,
+            direct_calls: false,
         }
+    }
+
+    /// Tell the model to call a listed tool directly by its own name instead of
+    /// through the nested `use_skill { skill, tool, args }` form.
+    ///
+    /// Only for a host that admits such a call: one that registers the pack's
+    /// tools as searchable (deferred) or routes a bare packed call back through
+    /// `use_skill`. The nested free-form `args` object is the form smaller
+    /// local models get wrong (an argument string swallowing the rest of the
+    /// object, or a call that never closes), while a flat direct call is the
+    /// shape every tool-calling model is trained on.
+    pub const fn with_direct_calls(mut self) -> Self {
+        self.direct_calls = true;
+        self
+    }
+
+    /// Whether listings and the `use_skill` description steer to direct calls.
+    pub const fn direct_calls(&self) -> bool {
+        self.direct_calls
     }
 
     /// Every pack, in table order.
